@@ -286,7 +286,13 @@ class ValidationApp:
         table_name = target_name.lower()
 
         try:
-            df_data = pd.read_csv(csv_path, encoding='utf-8', low_memory=False)
+            # 1차 시도: utf-8 인코딩으로 읽기
+            try:
+                df_data = pd.read_csv(csv_path, encoding='utf-8', low_memory=False)
+            # 2차 시도: exe 환경에서 발생하는 다양한 인코딩 관련 예외를 모두 포괄하여 처리
+            except Exception:
+                df_data = pd.read_csv(csv_path, encoding='cp949', low_memory=False)
+
             df_data.to_sql(table_name, conn, if_exists='replace', index=False)
             total_records = len(df_data)
         except Exception as e:
@@ -298,7 +304,6 @@ class ValidationApp:
             raise Exception(f"{target_name} 룰 파일 로드 실패: {e}")
 
         all_errors = []
-        # --- 수정된 파일명 포맷 적용 부분 ---
         output_excel_path = os.path.join(out_dir, f"{table_name}_audit_result.xlsx")
 
         for index, row in df_rules.iterrows():
@@ -329,10 +334,7 @@ class ValidationApp:
                 self.root.after(0, self._safe_tree_insert,
                                 (target_name, display_name, "⚠️ SQL실패", f"{total_records:,}건", "N/A", error_msg))
 
-                print(f"\n[{target_name} SQL 오류] {display_name}")
-                print(f" - 실행된 쿼리: {sql_query}")
-                print(f" - 에러 내용: {e}")
-                print("-" * 60)
+                # [수정됨] exe(noconsole) 환경에서 튕김 현상을 유발할 수 있는 print문 삭제
 
         if all_errors:
             final_error_df = pd.concat(all_errors, ignore_index=True)
