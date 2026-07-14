@@ -4,6 +4,7 @@ name: Build EXE Application
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:  # <-- 이 줄을 추가하면 수동 실행 버튼이 활성화됩니다.
 
 jobs:
   build:
